@@ -1,0 +1,61 @@
+name: JD 需求看板每日更新
+
+# 每天北京时间 08:30 自动拉取 TAPD 需求 → 重建看板 → 发布
+# 手动触发也可：Actions 页面点 "Run workflow"
+# 注意：仓库里的脚本文件都放在 deploy/ 子目录下，所以 run 步骤统一指定 working-directory
+on:
+  schedule:
+    - cron: '30 0 * * *'   # UTC 00:30 = 北京时间 08:30
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 避免并发跑批互相覆盖
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deploy
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 拉取 TAPD 需求（带密钥，429 自动退避）
+        env:
+          TAPD_KEY: ${{ secrets.TAPD_KEY }}
+        run: node tapd_fetch.js fetch
+
+      - name: 生成看板 HTML
+        run: node build_kanban.js
+
+      - name: 配置 Pages
+        uses: actions/configure-pages@v5
+
+      - name: 上传站点文件
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: deploy/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 发布到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
