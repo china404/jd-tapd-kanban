@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JD 项目需求控制中心 · 每日进度跟踪</title>
+<style>
+  :root{
+    --bg:#f4f6f9;--card:#fff;--line:#e8ebf0;--line2:#dfe3ea;--text:#1f2937;--muted:#8a94a6;
+    --blue:#2563eb;--blue-d:#1e40af;--green:#0f9d76;--green-d:#0b7a5e;--purple:#6d5bd0;
+    --red:#d92d20;--red-bg:#fdf0ef;--blue-bg:#eaf3ff;--soft:#fafbfc;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+    font-size:12px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1640px;margin:0 auto;padding:14px 18px 36px}
+  .top{display:flex;align-items:baseline;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  .top h1{font-size:17px;margin:0;font-weight:650;color:#16203a;letter-spacing:.2px}
+  .top .stamp{color:var(--muted);font-size:11px}
+  .top .sp{flex:1}
+  .top select{font:inherit;font-size:11px;padding:5px 8px;border:1px solid var(--line2);border-radius:5px;background:#fff;color:var(--text)}
+  .qsel{background:#fff7ed!important;border-color:#fcd9a8!important;color:#9a3412!important;font-weight:600}
+  .kpis{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin-bottom:10px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 11px;min-height:78px}
+  .kpi.hl{background:var(--blue-bg);border-color:#d5e6ff}
+  .kpi.warn{background:var(--red-bg);border-color:#f6d5d1}
+  .kpi .lb{color:var(--muted);font-size:11px;display:flex;justify-content:space-between;align-items:center}
+  .kpi .lb .ic{font-size:10px;color:#b6bfcc}
+  .kpi .v{font-size:25px;font-weight:640;line-height:1.1;margin-top:6px;letter-spacing:-.4px}
+  .kpi .v.blue{color:var(--blue-d)}.kpi .v.green{color:var(--green-d)}
+  .kpi .v.red{color:var(--red)}.kpi .v.purple{color:var(--purple)}
+  .kpi .sub{color:var(--muted);font-size:10px;margin-top:4px}
+  .kpi.tri .v{font-size:19px;letter-spacing:-1px}
+  .panels{display:grid;grid-template-columns:270px 1fr;gap:10px;margin-bottom:10px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+  .panel h2{font-size:12px;font-weight:650;margin:0 0 10px;color:#374151;display:flex;align-items:center;justify-content:space-between}
+  .panel h2 .rng{display:flex;gap:3px}
+  .panel h2 .rng button{font-size:10px;padding:2px 7px;border:1px solid var(--line2);background:#fff;border-radius:4px;color:var(--muted);cursor:pointer}
+  .panel h2 .rng button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+  .donut-wrap{display:flex;flex-direction:column;align-items:center}
+  .donut{width:150px;height:150px}
+  .legend{width:100%;margin-top:10px}
+  .legend .li{display:flex;align-items:center;gap:6px;margin:5px 0;font-size:11px}
+  .legend .dot{width:8px;height:8px;border-radius:2px;flex:none}
+  .legend .nm{color:var(--muted);flex:1}
+  .legend .ct{font-variant-numeric:tabular-nums;font-weight:600}
+  .trend{width:100%;height:196px}
+  .trend-axis{font-size:10px;fill:var(--muted)}
+  .chart-note{color:var(--muted);font-size:10px;margin-top:4px}
+  .risk{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 14px;margin-bottom:12px}
+  .risk h2{font-size:12px;font-weight:650;margin:0 0 8px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .risk h2 .t{color:#374151}
+  .risk h2 .chip{font-size:10px;font-weight:500;color:var(--muted);padding:2px 7px;background:var(--soft);border:1px solid var(--line);border-radius:10px}
+  .risk h2 .chip b{color:var(--red)}
+  .risk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .risk-col{border:1px solid var(--line);border-radius:5px;padding:8px 10px;background:var(--soft)}
+  .risk-col .h{font-size:11px;color:var(--muted);margin-bottom:6px}
+  .risk-col .items{display:flex;flex-direction:column;gap:4px;max-height:96px;overflow:auto}
+  .risk-col a{color:var(--text);font-size:11px;text-decoration:none;padding:3px 5px;border-radius:4px;background:#fff;border:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .risk-col a:hover{border-color:var(--blue);color:var(--blue)}
+  .risk-col a .d{color:var(--red);font-size:10px;margin-right:4px}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line2);margin:14px 0 10px}
+  .tabs button{border:0;background:none;padding:8px 14px;font-size:12px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tabs button.on{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+  .tabs .sp{flex:1}
+  .tabs .pill{font-size:10px;background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:1px 6px;color:var(--muted)}
+  .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  .bar select,.bar input[type=text]{font:inherit;font-size:11px;padding:5px 8px;border:1px solid var(--line2);border-radius:5px;background:#fff;color:var(--text)}
+  .bar input.w{width:200px}
+  .bar label{font-size:11px;color:var(--muted)}
+  button.act{font-size:11px;padding:5px 10px;border:1px solid var(--line2);border-radius:5px;background:#fff;cursor:pointer;color:var(--text)}
+  button.act:hover{background:var(--soft)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .scroll{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;min-width:1280px;font-size:11px}
+  th,td{border-bottom:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:middle}
+  th{background:var(--soft);color:var(--muted);font-weight:600;font-size:10px;white-space:nowrap;position:sticky;top:0;z-index:2}
+  tbody tr:hover{background:#fbfcfe}
+  tr.taskrow{background:#fcfdff;color:#5b6472}
+  tr.taskrow td:first-child{padding-left:24px}
+  td.id{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+  td.nm{max-width:330px}
+  td.nm a{color:var(--text);text-decoration:none}
+  td.nm a:hover{color:var(--blue);text-decoration:underline}
+  .tag{display:inline-block;padding:1px 7px;border-radius:9px;font-size:10px;color:#fff;white-space:nowrap}
+  .pill2{display:inline-block;padding:1px 7px;border-radius:4px;font-size:10px;background:var(--soft);border:1px solid var(--line);color:var(--muted)}
+  .prio{font-weight:650;font-size:10px}
+  .prog{display:flex;align-items:center;gap:5px}
+  .prog .bar{width:58px;height:5px;background:#eef1f5;border-radius:3px;overflow:hidden}
+  .prog .bar i{display:block;height:100%;background:var(--blue)}
+  .prog span{color:var(--muted);font-size:10px}
+  .expand{cursor:pointer;color:var(--blue);font-size:11px;user-select:none}
+  .gantt-scroll{overflow-x:auto}
+  .gantt{display:flex;width:max-content;min-width:100%}
+  .gleft{width:340px;flex:none;border-right:1px solid var(--line2);position:sticky;left:0;z-index:6;background:#fff}
+  .gright{position:relative;overflow:visible}
+  .gh-left,.gh-right{height:48px;border-bottom:1px solid var(--line2);background:var(--soft)}
+  .gh-left .cell{padding:6px 10px;color:var(--muted);font-size:10px}
+  .mhead,.whead{display:flex;height:24px}
+  .mhead>div{border-right:1px solid var(--line2);border-bottom:1px solid var(--line);padding:3px 6px;font-size:10px;font-weight:600}
+  .whead>div{width:36px;flex:none;text-align:center;font-size:9px;color:var(--muted);border-right:1px solid #f0f2f5;line-height:24px}
+  .grow,.gbar-row{height:34px;position:relative}
+  .grow{border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 10px;gap:6px}
+  .grow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+  .grow .who{color:var(--muted);font-size:10px;flex:none}
+  .gbar-row{border-bottom:1px solid var(--line);background-image:repeating-linear-gradient(to right,transparent 0,transparent 35px,#f0f2f5 35px,#f0f2f5 36px)}
+  .gbar{position:absolute;top:8px;height:18px;border-radius:3px;color:#fff;font-size:9px;display:flex;align-items:center;padding:0 5px;overflow:hidden;white-space:nowrap}
+  .gbar .fill{position:absolute;left:0;top:0;bottom:0;background:rgba(0,0,0,.26)}
+  .gbar .txt{position:relative;z-index:2}
+  .today{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:5}
+  .grp{height:26px;background:#eef2f7;border-bottom:1px solid var(--line2);display:flex;align-items:center;
+    padding:0 10px;font-size:11px;font-weight:650;color:#374151;gap:6px}
+  .grp .cnt{font-size:10px;font-weight:500;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:8px;padding:0 6px}
+  .grp-left{height:26px;background:#eef2f7;border-bottom:1px solid var(--line2)}
+  .tfoot{padding:8px 10px;border-top:1px solid var(--line);background:var(--soft)}
+  td input{font:inherit;font-size:11px;padding:4px 6px;border:1px solid var(--line2);border-radius:4px;width:100%}
+  footer{margin-top:18px;color:var(--muted);font-size:10px;line-height:1.8}
+  code{background:#eef1f5;padding:1px 4px;border-radius:3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>JD 项目需求控制中心 · 每日进度跟踪</h1>
+    <span class="stamp" id="stamp"></span>
+    <span class="sp"></span>
+    <select id="fMonthTop" class="qsel" title="按需求创建月份筛选，指标与图表随之联动"></select>
+    <select id="fReqTop"><option value="">全提需方</option></select>
+    <button class="act" id="reload" title="重新拉取并构建">刷新数据</button>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="panels">
+    <div class="panel">
+      <h2>状态分布</h2>
+      <div class="donut-wrap"><svg class="donut" id="donut" viewBox="0 0 160 160"></svg>
+        <div class="legend" id="legend"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>任务进度趋势 <span class="rng"><button data-days="7">7天</button><button data-days="30" class="on">30天</button><button data-days="90">90天</button></span></h2>
+      <svg class="trend" id="trend" viewBox="0 0 900 196" preserveAspectRatio="none"></svg>
+      <div class="chart-note">按任务累计：需求总数 = 累计已创建，已完成 = 累计状态达成，完成率按已完成任务计。基于 TAPD 真实创建时间。</div>
+    </div>
+  </div>
+
+  <div class="risk" id="risk"></div>
+
+  <div class="tabs">
+    <button class="on" data-view="table">需求看板</button>
+    <button data-view="gantt">甘特图</button>
+    <button data-view="pending">待提需求 <span class="pill" id="pc">0</span></button>
+    <span class="sp"></span>
+  </div>
+
+  <div class="bar" id="bar">
+    <label><input type="checkbox" id="showTasks" checked> 展开任务</label>
+    <select id="fReq"></select><select id="fStage"></select><select id="fPrio"></select><select id="fCreator"></select>
+    <input type="text" id="fSearch" class="w" placeholder="搜索需求 / 负责人 / 产研">
+    <span class="sp" style="flex:1"></span>
+    <button class="act" id="expCsv">导出 CSV</button>
+    <button class="act" id="expJson">导出 JSON</button>
+    <button class="act" id="imp">导入 JSON</button>
+    <input type="file" id="file" accept="application/json" hidden>
+  </div>
+
+  <section id="vTable"><div class="card scroll"><table>
+    <thead><tr><th style="width:78px">ID</th><th style="min-width:300px">需求 / 任务</th>
+      <th style="width:76px">提需方</th><th style="width:64px">优先级</th><th style="width:100px">状态</th>
+      <th style="width:100px">提出人</th><th style="width:100px">开始</th><th style="width:100px">截止</th>
+      <th style="width:140px">对应产研</th><th style="width:110px">进度</th><th style="width:80px">来源</th></tr></thead>
+    <tbody id="tbody"></tbody></table></div></section>
+  <section id="vGantt" hidden><div class="card gantt-scroll"><div class="gantt" id="gantt"></div></div></section>
+  <section id="vPending" hidden><div class="card scroll"><table style="min-width:900px">
+    <thead><tr><th>ID</th><th style="min-width:300px">需求</th><th style="width:110px">提出人</th><th style="width:100px">提需方</th><th style="width:130px">预期时间</th><th style="min-width:200px">备注</th><th style="width:60px">操作</th></tr></thead>
+    <tbody id="pbody"></tbody></table><div class="tfoot"><button class="act" id="addP">+ 增加一行</button></div></div></section>
+
+  <footer>数据源：TAPD workspace <code id="ws"></code>，按名称含 <code>【JD】</code> 过滤，状态/优先级/提需方/业务条线按项目自定义字段映射。编辑仅保存在本机浏览器。</footer>
+</div>
+<script>
+/*__DATA__*/
+(function(){
+  'use strict';
+  var $=function(s){return document.querySelector(s)};
+  var LS='jd_tapd_kanban_live_v2';
+  var state=load();var view='table';var days=30;
+  var TODAY=new Date(Date.now()+8*3600*1000).toISOString().slice(0,10);  // 北京时间，随跑批滚动
+  var MONTH='';  // 当前选中月份，空=全部
+  var TC={'风控':'#d92d20','催收':'#e07a1f','运营':'#2563eb','产品':'#6d5bd0','研发':'#0891b2','合规':'#0f9d76','—':'#9aa3b2'};
+  var PC={'P0':'#d92d20','P1':'#e07a1f','P2':'#0f9d76','P3':'#9aa3b2'};
+  var SC={done:'#0f9d76',doing:'#2563eb',review:'#6d5bd0',stopped:'#d92d20',other:'#9aa3b2'};
+  var SL={done:'已完成',doing:'进行中',review:'待开始',stopped:'已逾期/拒绝',other:'其他'};
+  var STAGE_OF_STATUS={};
+  ['已完成','已实现','结束阶段','流程终止'].forEach(function(s){STAGE_OF_STATUS[s]='done'});
+  ['开发中','进行中','设计中','执行阶段','待UAT测试','测试中','待测试','冒烟测试通过','开发完成','设计完成'].forEach(function(s){STAGE_OF_STATUS[s]='doing'});
+  ['待发布','待产品验收','产品验收中','产品验收完成','待业务验收','业务验收中','业务验收完成','待评审','迭代评审完成','需求准备就绪','需求分析中','待规划','提需完成','待设计','待排期','待开发'].forEach(function(s){STAGE_OF_STATUS[s]='review'});
+  ['已拒绝','评审不通过','验收不通过','已暂缓','流程挂起'].forEach(function(s){STAGE_OF_STATUS[s]='stopped'});
+
+  function load(){var p={board:DATA.board,pending:[]};try{var r=localStorage.getItem(LS);if(r){var q=JSON.parse(r);if(q&&Array.isArray(q.board))p=q}}catch(e){}if(!p.pending)p.pending=[];return p}
+  function save(){try{localStorage.setItem(LS,JSON.stringify(state))}catch(e){}}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function uniq(k){var m={};DATA.items.forEach(function(x){var v=x[k]||'—';m[v]=1});return Object.keys(m).sort()}
+  function opt(a,c){return a.map(function(o){return '<option'+(o===c?' selected':'')+'>'+esc(o)+'</option>'}).join('')}
+
+  // 当前月份下的需求（KPI/图表/风险统一口径）
+  function scopeBoard(){
+    if(!MONTH)return state.board;
+    return state.board.filter(function(x){return (x.created||'').slice(0,7)>=MONTH});  // X月起至今
+  }
+  function statsOfBoard(b){
+    var done=b.filter(function(x){return x.stage==='done'}).length;
+    var doing=b.filter(function(x){return x.stage==='doing'}).length;
+    var review=b.filter(function(x){return x.stage==='review'}).length;
+    var stopped=b.filter(function(x){return x.stage==='stopped'}).length;
+    var overdue=b.filter(function(x){return x.due&&x.due<TODAY&&x.stage!=='done'}).length;
+    return {total:b.length,done:done,doing:doing,review:review,stopped:stopped,overdue:overdue,
+      rate:b.length?(done/b.length*100).toFixed(1):'0.0',
+      ops:b.filter(function(x){return x.requester==='运营'}).length,
+      risk:b.filter(function(x){return x.requester==='风控'||x.line==='风险/反欺诈'}).length,
+      debt:b.filter(function(x){return x.requester==='催收'}).length};
+  }
+
+  function renderKpis(){
+    var b=scopeBoard(),s=statsOfBoard(b);
+    var scope=MONTH?(MONTH+' 起至今'):'全部月份';
+    var k=[
+      {l:'需求完成度',v:s.rate+'%',cls:'hl',vc:'blue',sub:'<b>'+s.done+'</b> / '+s.total+' ('+scope+')'},
+      {l:'需求总数',v:s.total,sub:MONTH?MONTH+' 起创建':'含 '+DATA.meta.tasks+' 条子任务'},
+      {l:'已完成',v:s.done,vc:'green'},
+      {l:'进行中',v:s.doing,vc:'blue'},
+      {l:'待评审/排期',v:s.review},
+      {l:'运营 / 风控 / 催收',v:'<span style="color:#2563eb">'+s.ops+'</span> / <span style="color:#d92d20">'+s.risk+'</span> / <span style="color:#e07a1f">'+s.debt+'</span>',cls:'tri',sub:'按提需方统计'},
+      {l:'已逾期',v:s.overdue,cls:'warn',vc:'red',sub:'截止日已过未完成'},
+      {l:'阻塞/拒绝',v:s.stopped,cls:'warn',vc:'red'}
+    ];
+    $('#kpis').innerHTML=k.map(function(x){return '<div class="kpi '+(x.cls||'')+'">'+
+      '<div class="lb">'+esc(x.l)+'<span class="ic">›</span></div>'+
+      '<div class="v '+(x.vc||'')+'">'+x.v+'</div>'+(x.sub?'<div class="sub">'+x.sub+'</div>':'')+'</div>'}).join('');
+    $('#stamp').textContent='数据截至 '+DATA.meta.generated+' · 当前口径：'+scope;
+    $('#ws').textContent=DATA.meta.workspace;
+  }
+
+  function renderDonut(){
+    var b=scopeBoard(),order=['done','doing','review','stopped','other'];
+    var data=order.map(function(k){return {k:k,n:b.filter(function(x){return x.stage===k}).length}}).filter(function(x){return x.n>0});
+    var total=data.reduce(function(a,x){return a+x.n},0)||1;
+    var cx=80,cy=80,r=62,sw=22,C=2*Math.PI*r,off=0,segs=[];
+    data.forEach(function(x){
+      var len=x.n/total*C;
+      segs.push('<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+SC[x.k]+'" stroke-width="'+sw+'" '+
+        'stroke-dasharray="'+len+' '+(C-len)+'" stroke-dashoffset="'+(-off)+'" transform="rotate(-90 '+cx+' '+cy+')"/>');
+      off+=len;
+    });
+    $('#donut').innerHTML=segs.join('')+
+      '<text x="80" y="74" text-anchor="middle" font-size="24" font-weight="650" fill="#1f2937">'+total+'</text>'+
+      '<text x="80" y="92" text-anchor="middle" font-size="10" fill="#8a94a6">需求总数</text>';
+    $('#legend').innerHTML=data.map(function(x){return '<div class="li"><span class="dot" style="background:'+SC[x.k]+'"></span>'+
+      '<span class="nm">'+SL[x.k]+'</span><span class="ct">'+x.n+'</span></div>'}).join('');
+  }
+
+  function renderTrend(){
+    var t=DATA.meta.trend.slice(-days),W=900,H=196,pl=44,pr=44,pt=14,pb=24;
+    var maxN=Math.max.apply(null,t.map(function(x){return x.total}))*1.05||1;
+    var iw=W-pl-pr,ih=H-pt-pb;
+    var px=function(i){return pl+i/(t.length-1||1)*iw};
+    var pyN=function(v){return pt+ih-(v/maxN)*ih};
+    var pyR=function(v){return pt+ih-(v/100)*ih};
+    var line=function(key,py){return t.map(function(x,i){return (i?'L':'M')+px(i).toFixed(1)+' '+py(x[key]).toFixed(1)}).join(' ')};
+    var area=line('total',pyN)+' L'+px(t.length-1).toFixed(1)+' '+(pt+ih)+' L'+pl+' '+(pt+ih)+' Z';
+    var grid='';[0,.25,.5,.75,1].forEach(function(f){var y=pt+ih-f*ih;
+      grid+='<line x1="'+pl+'" y1="'+y+'" x2="'+(W-pr)+'" y2="'+y+'" stroke="#eef1f5" stroke-width="1"/>'+
+        '<text x="'+(pl-6)+'" y="'+(y+3)+'" text-anchor="end" class="trend-axis">'+Math.round(maxN*f)+'</text>'+
+        '<text x="'+(W-pr+6)+'" y="'+(y+3)+'" class="trend-axis">'+Math.round(f*100)+'%</text>'});
+    var xt='';t.forEach(function(x,i){if(i%Math.ceil(t.length/8)===0||i===t.length-1){
+      xt+='<text x="'+px(i)+'" y="'+(H-6)+'" text-anchor="middle" class="trend-axis">'+x.d.slice(5)+'</text>'}});
+    $('#trend').innerHTML=grid+
+      '<path d="'+area+'" fill="#eaf3ff" opacity=".75"/>'+
+      '<path d="'+line('total',pyN)+'" fill="none" stroke="#2563eb" stroke-width="1.6"/>'+
+      '<path d="'+line('done',pyN)+'" fill="none" stroke="#0f9d76" stroke-width="1.6"/>'+
+      '<path d="'+line('rate',pyR)+'" fill="none" stroke="#6d5bd0" stroke-width="1.4" stroke-dasharray="4 3"/>'+
+      xt+
+      '<g transform="translate('+(pl+10)+','+(pt+4)+')">'+
+      '<rect x="0" y="0" width="8" height="8" fill="#2563eb"/><text x="12" y="8" class="trend-axis">任务总数</text>'+
+      '<rect x="66" y="0" width="8" height="8" fill="#0f9d76"/><text x="78" y="8" class="trend-axis">已完成</text>'+
+      '<rect x="126" y="0" width="8" height="8" fill="#6d5bd0"/><text x="138" y="8" class="trend-axis">完成率</text></g>';
+  }
+
+  function renderRisk(){
+    var b=scopeBoard();
+    var od=b.filter(function(x){return x.due&&x.due<TODAY&&x.stage!=='done'});
+    var rt=DATA.items.filter(function(x){return x.taskType==='测试任务'&&x.type==='任务'&&x.stage!=='done'&&(!MONTH||(x.created||'').slice(0,7)>=MONTH)});
+    var np=b.filter(function(x){return x.stage==='review'&&(!x.due||x.due>TODAY)});
+    function col(title,arr,fn){return '<div class="risk-col"><div class="h">'+title+' ('+arr.length+')</div><div class="items">'+
+      (arr.length?arr.slice(0,12).map(fn).join(''):'<span style="color:var(--muted)">无</span>')+'</div></div>'}
+    $('#risk').innerHTML='<h2><span class="t">风险盯盘</span>'+
+      '<span class="chip">逾期 <b>'+od.length+'</b></span>'+
+      '<span class="chip">测试待办 <b>'+rt.length+'</b></span>'+
+      '<span class="chip">待排期/未跟踪 <b>'+np.length+'</b></span></h2>'+
+      '<div class="risk-grid">'+
+      col('逾期未完成',od,function(x){return '<a href="'+x.url+'" target="_blank" title="'+esc(x.name)+'"><span class="d">'+esc(x.due)+'</span>'+esc(x.name.replace(/^【[^】]*】/,''))+'</a>'})+
+      col('测试任务待办',rt,function(x){return '<a href="'+x.url+'" target="_blank" title="'+esc(x.name)+'">'+esc(x.name.replace(/^【[^】]*】/,''))+'</a>'})+
+      col('待评审/未排期',np,function(x){return '<a href="'+x.url+'" target="_blank" title="'+esc(x.name)+'">'+esc(x.name.replace(/^【[^】]*】/,''))+'</a>'})+
+      '</div>';
+  }
+  document.querySelectorAll('.rng button').forEach(function(b){b.addEventListener('click',function(){
+    days=+b.getAttribute('data-days');document.querySelectorAll('.rng button').forEach(function(x){x.classList.toggle('on',x===b)});renderTrend()})});
+
+  function filterFn(n){
+    var req=$('#fReq').value,st=$('#fStage').value,pr=$('#fPrio').value,cr=$('#fCreator').value;
+    var reqT=$('#fReqTop').value,q=$('#fSearch').value.trim().toLowerCase();
+    if(MONTH&&(n.created||'').slice(0,7)<MONTH)return false;
+    if(req&&n.requester!==req)return false;if(reqT&&n.requester!==reqT)return false;
+    if(st&&n.stage!==st)return false;if(pr&&n.prio!==pr)return false;if(cr&&n.creator!==cr)return false;
+    if(q&&(n.name+' '+n.owner+' '+n.pm+' '+n.creator+' '+n.id).toLowerCase().indexOf(q)<0)return false;
+    return true;
+  }
+  function filtered(){return state.board.filter(filterFn)}
+
+  function nameCell(n,task){
+    var t=esc(n.name.replace(/^【[^】]*】/,''));
+    if(task)return '<span style="color:var(--muted)">└ </span>'+t;
+    var c=n.children&&n.children.length;
+    return '<span class="expand" data-id="'+n.id+'">'+(c?'▸':'·')+'</span> <a href="'+n.url+'" target="_blank">'+t+'</a>'+(c?' <span class="pill2">'+c+' 任务</span>':'');
+  }
+  function rowHTML(n){
+    var prog='<div class="prog"><div class="bar"><i style="width:'+n.progress+'%"></i></div><span>'+n.progress+'%</span></div>';
+    return '<tr data-id="'+esc(n.id)+'"><td class="id">'+esc(n.id)+'</td>'+
+      '<td class="nm">'+nameCell(n,false)+'</td>'+
+      '<td><span class="tag" style="background:'+(TC[n.requester]||'#9aa3b2')+'">'+esc(n.requester)+'</span></td>'+
+      '<td><span class="prio" style="color:'+(PC[n.prio]||'#6b7280')+'">'+esc(n.prio)+'</span></td>'+
+      '<td><span class="pill2" style="border-color:'+SC[n.stage]+';color:'+SC[n.stage]+'">'+esc(n.status)+'</span></td>'+
+      '<td>'+esc(n.creator)+'</td><td>'+esc(n.begin)+'</td><td>'+esc(n.due)+'</td>'+
+      '<td title="PM: '+esc(n.pm)+'">'+esc(n.owner||n.pm)+'</td><td>'+prog+'</td>'+
+      '<td><a href="'+n.url+'" target="_blank" style="color:var(--muted)">TAPD ↗</a></td></tr>';
+  }
+  function taskHTML(c){
+    var prog='<div class="prog"><div class="bar"><i style="width:'+c.progress+'%;background:#9aa3b2"></i></div><span>'+c.progress+'%</span></div>';
+    return '<tr class="taskrow"><td class="id">'+esc(c.id)+'</td><td class="nm">'+nameCell(c,true)+'</td>'+
+      '<td><span style="color:var(--muted)">'+esc(c.taskType||'任务')+'</span></td><td>—</td><td>'+esc(c.status)+'</td>'+
+      '<td>—</td><td>'+esc(c.begin)+'</td><td>'+esc(c.due)+'</td><td>'+esc(c.owner)+'</td><td>'+prog+'</td>'+
+      '<td><a href="'+c.url+'" target="_blank" style="color:var(--muted)">↗</a></td></tr>';
+  }
+  function renderTable(){
+    var list=filtered(),show=$('#showTasks').checked,h=[];
+    list.forEach(function(n){h.push(rowHTML(n));if(show&&n.children&&n.children.length)n.children.forEach(function(c){h.push(taskHTML(c))})});
+    $('#tbody').innerHTML=h.join('')||'<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:24px">无匹配需求</td></tr>';
+  }
+
+  function parseD(s){return new Date(s+'T00:00:00')}
+  function monday(d){var x=new Date(d),w=x.getDay()||7;x.setDate(x.getDate()-(w-1));x.setHours(0,0,0,0);return x}
+  function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x}
+  function fmt(d){return (d.getMonth()+1)+'/'+d.getDate()}
+  // 按 TAPD 状态流转链分组（待排期→...→验收→完成→异常）
+  var FLOW=['待规划','待评审','待排期','待开发','开发中','开发完成','待测试','测试中','待UAT测试',
+    '待发布','待产品验收','产品验收中','产品验收完成','待业务验收','业务验收中','业务验收完成',
+    '已实现','已完成','已暂缓','评审不通过','验收不通过','已拒绝','提需完成','需求分析中','需求准备就绪','待设计','设计中','设计完成','冒烟测试通过'];
+  var WEEK=40;
+  function statusOrder(s){var i=FLOW.indexOf(s);return i<0?FLOW.length:i}
+  function renderGantt(){
+    var list=filtered().filter(function(x){return x.begin&&x.due});
+    if(!list.length){$('#gantt').innerHTML='<div style="padding:26px;color:var(--muted)">当前筛选下无带日期的需求</div>';return}
+    var min=parseD(list[0].begin),max=parseD(list[0].due);
+    list.forEach(function(n){var s=parseD(n.begin),e=parseD(n.due);if(s<min)min=s;if(e>max)max=e});
+    var a0=monday(min),a1=addDays(monday(max),6),weeks=Math.round((a1-a0)/604800000)+1,totalW=weeks*WEEK;
+    var months=[],i=0;
+    while(i<weeks){var ws=addDays(a0,i*7),mid=addDays(ws,3),mo=mid.getMonth(),y=mid.getFullYear(),j=i;
+      while(j<weeks){var m2=addDays(a0,j*7+3);if(m2.getMonth()!==mo||m2.getFullYear()!==y)break;j++}
+      months.push({label:y+' 年 '+(mo+1)+' 月',span:j-i});i=j}
+    var mh=months.map(function(m){return '<div style="width:'+(m.span*WEEK)+'px">'+m.label+'</div>'}).join('');
+    var wh='';for(var k=0;k<weeks;k++)wh+='<div>'+fmt(addDays(a0,k*7))+'</div>';
+    var today=new Date();today.setHours(0,0,0,0);
+    var tl='';  // 已移除贯穿红线的今日标记
+    // 按状态分组，组内按创建时间
+    var groups={};list.forEach(function(n){(groups[n.status]=groups[n.status]||[]).push(n)});
+    var keys=Object.keys(groups).sort(function(a,b){return statusOrder(a)-statusOrder(b)});
+    var leftRows=[],bars=[];
+    keys.forEach(function(st){
+      var color=SC[STAGE_OF_STATUS[st]]||'#9aa3b2';
+      leftRows.push('<div class="grp-left"></div>');
+      bars.push('<div class="grp"><span class="dot" style="width:8px;height:8px;border-radius:2px;background:'+color+'"></span>'+esc(st)+'<span class="cnt">'+groups[st].length+'</span></div>');
+      groups[st].sort(function(a,b){return (a.created||'').localeCompare(b.created||'')}).forEach(function(n){
+        leftRows.push('<div class="grow"><span class="nm" title="'+esc(n.name)+'">'+esc(n.name.replace(/^【[^】]*】/,''))+'</span>'+
+          '<span class="tag" style="background:'+(TC[n.requester]||'#9aa3b2')+'">'+esc(n.requester)+'</span><span class="who">'+esc(n.creator)+'</span></div>');
+        var s=parseD(n.begin),e=parseD(n.due),l=((s-a0)/604800000)*WEEK;
+        var w=((addDays(e,1)-a0)/604800000)*WEEK-l;
+        var realW=Math.max(46,w);  // 同日需求给最小可读宽度
+        bars.push('<div class="gbar-row"><div class="gbar" style="left:'+l+'px;width:'+realW+'px;background:'+color+'">'+
+          '<div class="fill" style="width:'+n.progress+'%"></div></div></div>');
+      });
+    });
+    var headL='<div class="gh-left"><div class="cell">状态 / 需求 / 提需方 / 提出人</div></div>';
+    $('#gantt').innerHTML='<div class="gleft">'+headL+leftRows.join('')+'</div>'+
+      '<div class="gright" style="width:'+Math.max(totalW+80,680)+'px"><div class="gh-right"><div class="mhead">'+mh+'</div><div class="whead">'+wh+'</div></div>'+bars.join('')+tl+'</div>';
+  }
+
+  function renderPending(){
+    $('#pbody').innerHTML=state.pending.map(function(t){return '<tr data-id="'+esc(t.id)+'">'+
+      '<td class="id">'+esc(t.id)+'</td><td><input data-f="name" value="'+esc(t.name)+'"></td>'+
+      '<td><input data-f="creator" value="'+esc(t.creator)+'"></td><td><input data-f="requester" value="'+esc(t.requester)+'"></td>'+
+      '<td><input data-f="eta" value="'+esc(t.eta)+'"></td><td><input data-f="note" value="'+esc(t.note)+'"></td>'+
+      '<td><button class="act" style="color:var(--red)" data-del="'+esc(t.id)+'">删</button></td></tr>'}).join('')||
+      '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">暂无待提需求</td></tr>';
+    $('#pc').textContent=state.pending.length;
+  }
+  function render(){renderTable();renderGantt();renderPending();renderKpis();renderDonut();renderRisk()}
+
+  document.addEventListener('change',function(e){var el=e.target,f=el.getAttribute&&el.getAttribute('data-f');if(!f)return;
+    var tr=el.closest('tr'),id=tr&&tr.getAttribute('data-id');if(!id)return;
+    var t=state.pending.find(function(x){return x.id===id});if(t){t[f]=el.value;save()}});
+  $('#pbody').addEventListener('click',function(e){var d=e.target.getAttribute&&e.target.getAttribute('data-del');if(!d)return;
+    state.pending=state.pending.filter(function(x){return x.id!==d});save();renderPending()});
+  $('#addP').addEventListener('click',function(){state.pending.unshift({id:'P-'+String(state.pending.length+1).padStart(3,'0'),name:'新待提需求',creator:'',requester:'',eta:'',note:''});save();renderPending()});
+  $('#tbody').addEventListener('click',function(e){var ex=e.target.classList.contains('expand');if(!ex)return;
+    var id=ex.getAttribute('data-id');var n=state.board.find(function(x){return x.id===id});if(!n)return;
+    var open=ex.textContent==='▸';ex.textContent=open?'▾':'▸';var s=ex.closest('tr').nextElementSibling;
+    while(s&&s.classList.contains('taskrow')){s.style.display=open?'':'none';s=s.nextElementSibling}});
+  $('#showTasks').addEventListener('change',renderTable);
+  function applyMonth(m){
+    MONTH=m;
+    renderKpis();renderDonut();renderRisk();renderTable();renderGantt();
+  }
+  $('#fMonthTop').addEventListener('change',function(){applyMonth(this.value)});
+  ['#fReq','#fStage','#fPrio','#fCreator','#fReqTop'].forEach(function(s){$(s).addEventListener('change',function(){
+    if(s==='#fReqTop')$('#fReq').value=$(s).value;else $('#fReqTop').value=$(s).value;renderTable();renderGantt()})});
+  $('#fSearch').addEventListener('input',function(){renderTable();renderGantt()});
+  document.querySelectorAll('[data-view]').forEach(function(b){b.addEventListener('click',function(){
+    view=b.getAttribute('data-view');document.querySelectorAll('[data-view]').forEach(function(x){x.classList.toggle('on',x===b)});
+    $('#vTable').hidden=view!=='table';$('#vGantt').hidden=view!=='gantt';$('#vPending').hidden=view!=='pending';
+    $('#bar').style.visibility=view==='pending'?'hidden':'visible'})});
+  function dl(n,t,ty){var b=new Blob([t],{type:ty||'text/plain;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000)}
+  $('#expCsv').addEventListener('click',function(){var hd=['ID','需求','类型','提需方','优先级','状态','提出人','开始','截止','对应产研','进度'];
+    var rows=[hd.join(',')].concat(filtered().map(function(n){return [n.id,n.name,n.type,n.requester,n.prio,n.status,n.creator,n.begin,n.due,n.owner,n.progress+'%'].map(function(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'}).join(',')}));
+    dl('jd-tapd-needs.csv','\ufeff'+rows.join('\r\n'),'text/csv;charset=utf-8')});
+  $('#expJson').addEventListener('click',function(){dl('jd-tapd-kanban-backup.json',JSON.stringify(state,null,2),'application/json')});
+  $('#imp').addEventListener('click',function(){$('#file').click()});
+  $('#file').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();
+    r.onload=function(){try{var p=JSON.parse(r.result);if(!Array.isArray(p.board))throw new Error('格式不符');state=p;save();render();alert('导入成功')}catch(err){alert('导入失败：'+err.message)}};r.readAsText(f);e.target.value=''});
+  $('#reload').addEventListener('click',function(){alert('刷新数据需在本地执行取数脚本：\nnode tapd_fetch.js fetch\nnode build_kanban.js\n然后重新打开本页')});
+
+  var months={};state.board.forEach(function(x){var m=(x.created||'').slice(0,7);if(m)months[m]=1});
+  var mlist=Object.keys(months).sort();
+  var curMonth=TODAY.slice(0,7);
+  if(mlist.indexOf(curMonth)<0)curMonth=mlist[mlist.length-1]||'';  // 当月无数据时取数据最新月
+  $('#fMonthTop').innerHTML='<option value="">全部月份</option>'+
+    mlist.map(function(m){return '<option value="'+m+'"'+(m===curMonth?' selected':'')+'>'+m+' 起至今</option>'}).join('');
+  MONTH=curMonth;  // 默认当月（无数据则最新月），避免历史已完成需求撑大分母
+
+  var opts=opt(uniq('requester'),'');$('#fReq').innerHTML='<option value="">全部提需方</option>'+opts;
+  $('#fReqTop').innerHTML='<option value="">全提需方</option>'+opts;
+  $('#fStage').innerHTML='<option value="">全部进度</option><option value="review">待开始</option><option value="doing">进行中</option><option value="done">已完成</option><option value="stopped">逾期/拒绝</option><option value="other">其他</option>';
+  $('#fPrio').innerHTML='<option value="">全部优先级</option>'+opt(uniq('prio'),'');
+  $('#fCreator').innerHTML='<option value="">全部提出人</option>'+opt(uniq('creator'),'');
+  renderDonut();renderTrend();render();
+})();
+</script>
+</body>
+</html>
